@@ -1,11 +1,24 @@
+from herbie import Herbie, wgrib2
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from cartopy import crs as ccrs, feature as cfeature
 import numpy as np
 import warnings
-import test
 
-dataSet = test.ds
+# User input variables (For testing)
+dateInput = "2022-08-13 12:00"
+searchTerm = ":RH:2 m"
+removeGribBool = False
+
+H = Herbie(
+    dateInput,  # model run date
+    model="hrrr",        # model name
+    product="sfc",       # model produce name (model dependent)
+    fxx=6,               # forecast lead time
+)
+
+dataSet = H.xarray(searchTerm, remove_grib=removeGribBool)
+print(dataSet)
 
 # Suppress warnings issued by Cartopy when downloading data files
 warnings.filterwarnings('ignore')
@@ -38,8 +51,8 @@ ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor='blue')
 gl = ax.gridlines(
     draw_labels=True,  # Draw grid labels
     linewidth=1.0,       # Set line width
-    color='black',      # Set line color
-    alpha=0.5,         # Set line transparency
+    color='grey',      # Set line color
+    alpha=0.75,         # Set line transparency
     linestyle=':',     # Set grid line style to dotted
 )
 
@@ -51,7 +64,7 @@ gl.ylocator = mticker.FixedLocator(np.arange(latS, latN, 1))
 mesh = ax.pcolormesh(
     dataSet.longitude,             # Latitude and Longitude
     dataSet.latitude,
-    dataSet.t2m,                   # Actual data
+    dataSet.r2,                   # Actual data
     transform=ccrs.PlateCarree(),  # Transform to fit projection
 )
 

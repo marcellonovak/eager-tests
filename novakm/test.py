@@ -12,5 +12,4 @@ H = Herbie(
     fxx=6,               # forecast lead time
 )
 
-ds = H.xarray(":(?:TMP|RH):2 m", remove_grib=False)
-print(ds)
+print(H.inventory())
