@@ -7,7 +7,7 @@ import warnings
 
 # User input variables (For testing)
 dateInput = "2022-08-13 12:00"
-searchTerm = ":RH:2 m"
+searchTerm = ":REFC:"
 removeGribBool = False
 
 H = Herbie(
@@ -46,13 +46,14 @@ ax.set_extent(
 ax.coastlines(resolution='50m', linewidth=0.5, edgecolor='blue')
 ax.add_feature(cfeature.STATES, linewidth=0.3, edgecolor='brown')
 ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor='blue')
+ax.add_feature(cfeature.LAKES, linewidth=0.5, edgecolor='blue')
 
 # Add gridlines to map
 gl = ax.gridlines(
     draw_labels=True,  # Draw grid labels
-    linewidth=1.0,       # Set line width
+    linewidth=1.0,     # Set line width
     color='grey',      # Set line color
-    alpha=0.75,         # Set line transparency
+    alpha=0.75,        # Set line transparency
     linestyle=':',     # Set grid line style to dotted
 )
 
@@ -64,7 +65,7 @@ gl.ylocator = mticker.FixedLocator(np.arange(latS, latN, 1))
 mesh = ax.pcolormesh(
     dataSet.longitude,             # Latitude and Longitude
     dataSet.latitude,
-    dataSet.r2,                   # Actual data
+    dataSet.refc,                   # Actual data
     transform=ccrs.PlateCarree(),  # Transform to fit projection
 )
 
