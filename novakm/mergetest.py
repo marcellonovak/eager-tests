@@ -39,21 +39,10 @@ dataSetDPT = H.xarray(":DPT:500 mb:", remove_grib=removeGribBool)
 dataSetTMP = H.xarray(":TMP:2 m", remove_grib=removeGribBool)
 
 dptAll = (H.xarray(":DPT:", remove_grib=removeGribBool))
-combined_merge = xr.merge([dptAll], compat="no_conflicts")
+combined_merge = xr.merge(dptAll, compat="no_conflicts")
 combined_dataset = xr.concat([combined_merge], dim='variable')
 
-print(dptAll)
-print(combined_dataset)
-print("\n")
-print(type(dptAll))
-print(type(combined_dataset))
-print(type(dataSetDPT))
-print("\n")
-
-# print(dataSetDPT)
-# print(dataSetTMP)
-
-dataList = [dataSetDPT, dataSetTMP]
+dataList = [combined_dataset, dataSetTMP]
 
 # Merge the two datasets along the 'x' and 'y' dimensions
 merged = xr.merge([dataSetDPT, dataSetTMP], compat="no_conflicts")

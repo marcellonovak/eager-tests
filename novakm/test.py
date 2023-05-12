@@ -18,7 +18,7 @@ for term in searches:
     search = (H.inventory(searchString=term))
     print(f"Search for {term} returned {search}\n")
 
-#Todo: go back through, see which variables use all searchterms
+
 """
 List of search terms using all results:
 DPT, TMP, REFC, DZDT, MSTAV, CNWAT, SPFH, WIND, PRATE, SFCR, FRICV, SHTFL, LHTFL, VEG, GFLUX, CAPE, CIN, PWAT, LCDC, 
