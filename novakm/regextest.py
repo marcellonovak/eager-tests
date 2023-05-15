@@ -1,4 +1,5 @@
 from herbie import Herbie, wgrib2
+import xarray
 
 dateInput = "2022-08-13 12:00"
 removeGribBool = False
@@ -10,13 +11,17 @@ H = Herbie(
     fxx=9,  # forecast lead time
 )
 
+# UGRD:300 mb|UGRD:500 mb|UGRD:700 mb|UGRD:850 mb|UGRD:925 mb|UGRD:1000 mb|
+
 regex = "(?:DPT|TMP|DZDT|MSTAV|CNWAT|SPFH|WIND|PRATE|SFCR|FRICV|SHTFL|LHTFL|VEG|GFLUX|CAPE|CIN|PWAT|LCDC|MCDC|HCDC|" \
         "DSWRF|DLWRF|HLCY|USTM|VSTM|VUCSH|VVCSH|VVCSH|HPBL|CANGLE|ESP|REFC|" \
-        "UGRD:300 mb|UGRD:500 mb|UGRD:700 mb|UGRD:850 mb|UGRD:925 mb|UGRD:1000 mb|UGRD:10 m above ground|" \
-        "VGRD:300 mb|VGRD:500 mb|VGRD:700 mb|VGRD:850 mb|VGRD:925 mb|VGRD:1000 mb|VGRD:10 m above ground|" \
-        "RH:2 m above ground|LFTX:500-1000 mb|TCDC:entire atmosphere|HGT:surface|HGT:equilibrium level|" \
-        "PRES:cloud base|PRES:cloud top|PRES:0C isotherm|USWRF:surface|ULWRF:surface)"
+        "[U|V]GRD:[3|5|7|8|9|10][0|5]0 mb|[U|V]GRD:10 m above ground|U[S|L]WRF:surface|RH:2 m above ground|" \
+        "LFTX:500-1000 mb|TCDC:entire atmosphere|HGT:[surface|equilibrium level]|PRES:cloud [base|top]|" \
+        "PRES:0C isotherm)"
 
-search = H.xarray(regex, remove_grib=removeGribBool)
+dataSet = H.xarray(regex, remove_grib=removeGribBool)
 
-print(search)
+dataVars = (list(dataSet.data_vars.keys())[0])
+
+print(dataSet)
+print(dataVars)
