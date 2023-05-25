@@ -7,7 +7,7 @@ import warnings
 
 # User input variables (For testing)
 dateInput = "2022-08-13 12:00"
-searchTerm = ":REFC:"
+searchTerm = ":TMP:2 m"
 removeGribBool = False
 
 H = Herbie(
@@ -65,7 +65,7 @@ gl.ylocator = mticker.FixedLocator(np.arange(latS, latN, 1))
 mesh = ax.pcolormesh(
     dataSet.longitude,             # Latitude and Longitude
     dataSet.latitude,
-    dataSet.refc,                   # Actual data
+    dataSet.t2m,                   # Actual data
     transform=ccrs.PlateCarree(),  # Transform to fit projection
 )
 

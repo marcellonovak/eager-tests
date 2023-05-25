@@ -1,5 +1,5 @@
 from herbie import Herbie, wgrib2
-import xarray as xr
+import xarray
 
 # User variables
 dateInput = "2022-08-13 12:00"
@@ -31,7 +31,25 @@ regex = "(?:DPT:500 mb|DPT:700 mb|DPT:850 mb|DPT:925 mb|DPT:1000 mb|DPT:2 m abov
         "DLWRF:surface|USWRF:surface|ULWRF:surface|HLCY:1000-0 m above ground|HLCY:3000-0 m above ground|" \
         "USTM:0-6000 m above ground|VSTM:0-6000 m above ground|VUCSH:0-1000 m above ground|" \
         "VUCSH:0-6000 m above ground|VVCSH:0-1000 m above ground|VVCSH:0-6000 m above ground|HPBL:surface|" \
-        "CANGLE:0-500 m above ground|ESP:0-3000 m above ground"
+        "CANGLE:0-500 m above ground|ESP:0-3000 m above ground)"
 
-# Create a dataset from the model using the regex
-dataSet = H.xarray(regex, removeGrib=removeGribBool)
+dataList = H.xarray(regex, remove_grib=removeGribBool)
+dataListVars = []
+dataSet = []
+
+index = 1
+while index != len(dataList):
+    dataSet = xarray.merge([dataList[index - 1], dataList[index]], compat="override")
+    tempVars = list(dataList[index - 1].data_vars.keys())
+    tempVars.remove("gribfile_projection")
+    for item in tempVars:
+        dataListVars.append(item)
+    index += 1
+
+dataSetList = list(dataSet.data_vars.keys())
+dataSetList.sort()
+dataListVars.sort()
+
+print(dataSetList)
+print(dataListVars)
+print(dataList)
