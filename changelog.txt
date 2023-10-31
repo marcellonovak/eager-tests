@@ -1,0 +1,22 @@
+Changelog:
+v2:   Writing whole rows instead of individual cells
+    Caching column names
+    Using sets to check if file exists/has been processed
+v3:   Caching of files and column names
+    Buffering rows before writing to disk
+v4:   Optimized Dataframe Creation
+    Avoiding Global Variables
+v5:   Vectorized EVERYTHING
+    Optimized file handling (appending checks)
+v6:   Parallel Processing
+    Moved row processing to a function
+    Moved file processing to a function
+    Moved buffer writing to a function
+v7:   Removed parallel processing, threadlocking is taking too long
+    Vectorized more of the data processing
+v8:   Edited the data to write after each full file is processed
+    Collect garbage to save memory
+    Adding more safeguards and checks to prevent crashing
+    Using iglob instead of glob, iterator
+    Added logging instead of print statements
+    Rounding to three decimals now
