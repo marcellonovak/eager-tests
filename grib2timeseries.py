@@ -1,6 +1,5 @@
 import os
 import glob
-import chardet
 import numpy as np
 import pandas as pd
 import pygrib
@@ -19,9 +18,9 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 isLinux = False
 
 # Directory Configuration, change as needed
-DATA_DIR =   os.path.join(".", "data_test") if not isLinux else "./data_test"
-OUTPUT_DIR = os.path.join(".", "output")    if not isLinux else "./output"
-LOG_DIR =    os.path.join(".", "logs")      if not isLinux else "./logs"
+DATA_DIR =   os.path.join("./data_main", "data_test") if not isLinux else "./data_test"
+OUTPUT_DIR = os.path.join("./output_main", "output")  if not isLinux else "./output"
+LOG_DIR =    os.path.join(".", "logs")                if not isLinux else "./logs"
 
 # Ensuring the directories exist, creating them if they don't
 if not os.path.exists(LOG_DIR):
@@ -138,8 +137,8 @@ def post_process_file(filepath):
 
     df = df.resample('H').asfreq()                         # Resample to hourly intervals and insert missing rows
     df.fillna("NaN", inplace=True)                         # Fill all missing values with "NaN"
-    df.replace("", "NaN", inplace=True)                    # Replace all empty cells with "NaN"
-    df.replace(r"^\s*$", "NaN", regex=True, inplace=True)  # Also replace purely whitespace cells with "NaN"
+    # df.replace("", "NaN", inplace=True)                    # Replace all empty cells with "NaN"
+    # df.replace(r"^\s*$", "NaN", regex=True, inplace=True)  # Also replace purely whitespace cells with "NaN"
     df.to_csv(filepath)                                    # Write the processed DataFrame back to the CSV file
 
     elapsed_time = datetime.now() - start_time                     # Calculate elapsed time
@@ -152,7 +151,7 @@ gc.disable()
 # Main
 if __name__ == '__main__':
 
-    print("GRIB2 Time Series Processor v9, by Marcello Novak, 2023") # Obligatory narcissistic message :)
+    print("GRIB2 Time Series Processor v9, by Marcello Novak, 2023")  # Obligatory narcissistic message :)
     print(f"Starting Main Processing for files in {DATA_DIR}...")  # Print starting message to terminal
     logging.info(f"Processing files in {DATA_DIR}...")  # Log starting message
 
