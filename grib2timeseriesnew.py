@@ -18,9 +18,12 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 isLinux = False
 
 # Directory Configuration, change as needed
-DATA_DIR =   os.path.join("./data_main", "data_test") if not isLinux else "./data_test"
-OUTPUT_DIR = os.path.join("./output_main", "output")  if not isLinux else "./output"
-LOG_DIR =    os.path.join(".", "logs")                if not isLinux else "./logs"
+DATA_DIR =   os.path.join(".", "data_main", "small_test_data") \
+    if not isLinux else "/data0/timeseries_hub/data_main/month_set"
+OUTPUT_DIR = os.path.join(".", "output_main", "small_test_output")  \
+    if not isLinux else "/data0/timeseries_hub/output_main/output_v1"
+LOG_DIR =    os.path.join(".", "logs") \
+    if not isLinux else "/data0/timeseries_hub/logs"
 
 # Ensuring the directories exist, creating them if they don't
 if not os.path.exists(LOG_DIR):
@@ -47,6 +50,18 @@ existing_point_files = set()  # Set for existing point files
 latlons_cache = None
 columns_cache = None
 
+# Function to read existing rows from a file
+def read_existing_timestamps(filepath):
+    try:
+        df = pd.read_csv(filepath, usecols=['timestamp'])
+        return set(df['timestamp'].unique())
+    except FileNotFoundError:
+        return set()
+    except pd.errors.EmptyDataError:
+        return set()
+    except ValueError:
+        return set()
+
 
 # Function to process a sub grid in the GRB file
 def process_sub_grid(current_sub_grid):
@@ -57,7 +72,7 @@ def process_sub_grid(current_sub_grid):
 
 
 # Function to process a whole GRB file
-def process_grb_file(file, latlons_cache, columns_cache):
+def process_grb_file(file, latlons_cache, columns_cache, timestamps_cache):
     start_time = datetime.now()  # Start the timer for this file
     local_data = defaultdict(lambda: defaultdict(list))  # Create a dictionary to store the data
 
@@ -95,6 +110,14 @@ def process_grb_file(file, latlons_cache, columns_cache):
                 column_name, values = process_sub_grid(sub_grid)
                 for lat, lon, val in zip(latitudes.ravel(), longitudes.ravel(), values):
                     outfile = f"{lat:.3f}_{lon:.3f}.csv"  # Rounds to three decimals now
+
+                    existing_timestamps = read_existing_timestamps(os.path.join(OUTPUT_DIR, outfile))
+                    # Check if the timestamp already exists in the CSV
+                    if timestamp in timestamps_cache[outfile]:
+                        logging.info(f"Timestamp {timestamp} already exists in {outfile}. Skipping.")
+                        continue
+                    timestamps_cache[outfile].add(timestamp)
+
                     local_data[outfile]['timestamp'].append(timestamp)
                     local_data[outfile][columns_cache[sub_grid]].append(val)
 
@@ -151,6 +174,9 @@ gc.disable()
 # Main
 if __name__ == '__main__':
 
+    # Initialize the timestamps cache
+    timestamps_cache = defaultdict(set)
+
     print("GRIB2 Time Series Processor v9, by Marcello Novak, 2023")  # Obligatory narcissistic message :)
     print(f"Starting Main Processing for files in {DATA_DIR}...")  # Print starting message to terminal
     logging.info(f"Processing files in {DATA_DIR}...")  # Log starting message
@@ -159,9 +185,13 @@ if __name__ == '__main__':
     existing_point_files.update([f for f in os.listdir(OUTPUT_DIR) if f.endswith('.csv')])
     files = glob.iglob(os.path.join(DATA_DIR, "*.grib2"))
 
+    # Populate timestamps_cache with existing timestamps
+    for filename in existing_point_files:
+        timestamps_cache[filename] = read_existing_timestamps(os.path.join(OUTPUT_DIR, filename))
+
     # Process files sequentially
     for i, file in enumerate(files, 1):
-        local_data = process_grb_file(file, latlons_cache, columns_cache)
+        local_data = process_grb_file(file, latlons_cache, columns_cache, timestamps_cache)  # Process the file
         gc.collect()  # Collect garbage after processing each file
 
         # Merge the local data with the data buffer
