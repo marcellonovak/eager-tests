@@ -18,9 +18,9 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 isLinux = False
 
 # Directory Configuration, change as needed
-DATA_DIR =   os.path.join(".", "data_main", "small_test_data") \
+DATA_DIR =   os.path.join(".", "data_main", "2_day_test") \
     if not isLinux else "/data0/timeseries_hub/data_main/month_set"
-OUTPUT_DIR = os.path.join(".", "output_main", "small_test_output")  \
+OUTPUT_DIR = os.path.join(".", "output_main", "2_day_output")  \
     if not isLinux else "/data0/timeseries_hub/output_main/output_v1"
 LOG_DIR =    os.path.join(".", "logs") \
     if not isLinux else "/data0/timeseries_hub/logs"
@@ -174,6 +174,9 @@ gc.disable()
 # Main
 if __name__ == '__main__':
 
+    # Initialize the timer for main processing
+    main_processing_start_time = datetime.now()
+
     # Initialize the timestamps cache
     timestamps_cache = defaultdict(set)
 
@@ -212,7 +215,14 @@ if __name__ == '__main__':
         write_buffer_to_disk(data_buffer, existing_point_files)
         gc.collect()  # Collect garbage
 
+    # Log the duration of main processing
+    main_processing_duration = datetime.now() - main_processing_start_time
+    logging.info(f"Main processing duration: {main_processing_duration}.")
     print("Main Processing complete.")  # Print completion message to terminal for the main processing
+
+    # Initialize the timer for post-processing
+    post_processing_start_time = datetime.now()
+
     print(f"Starting Post-Processing for files in {DATA_DIR}...")  # Print starting message to terminal
     logging.info(f"Post-processing files in {DATA_DIR}...")  # Log starting message
 
@@ -222,4 +232,7 @@ if __name__ == '__main__':
         post_process_file(outfile)  # Post-process the file
         gc.collect()                # Collect garbage
 
+    # Log the duration of post-processing
+    post_processing_duration = datetime.now() - post_processing_start_time
+    logging.info(f"Post-processing duration: {post_processing_duration}.")
     print("Post-processing complete.")
