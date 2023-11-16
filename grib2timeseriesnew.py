@@ -68,11 +68,13 @@ def process_sub_grid(current_sub_grid):
     current_values = current_sub_grid.values.ravel()  # Get the values from all the grid cells
     current_values = np.where(np.ma.getmask(current_values), np.nan, current_values)
     current_column = f"{current_sub_grid.name}: {current_sub_grid.level} {current_sub_grid.units}"  # Create column name
+    print(f"Processing {current_column}")
     return current_column, current_values
 
 
 # Function to process a whole GRB file
 def process_grb_file(file, latlons_cache, columns_cache, timestamps_cache):
+    print(f"Processing {file}")
     start_time = datetime.now()  # Start the timer for this file
     local_data = defaultdict(lambda: defaultdict(list))  # Create a dictionary to store the data
 
@@ -82,6 +84,7 @@ def process_grb_file(file, latlons_cache, columns_cache, timestamps_cache):
 
             if not all_grids:
                 # Log warning and return empty dictionary
+                print(f"No grids found in file {file}. Skipping.")
                 logging.warning(f"No grids found in file {file}. Skipping.")
                 return {}
 
@@ -103,6 +106,7 @@ def process_grb_file(file, latlons_cache, columns_cache, timestamps_cache):
 
                 # Check if the sub grid is unknown, skip
                 if "unknown" in sub_grid.name.lower():
+                    print(f"Skipping sub-grid with name containing 'unknown': {sub_grid.name}")
                     logging.warning(f"Skipping sub-grid with name containing 'unknown': {sub_grid.name}")
                     continue
 
@@ -118,20 +122,34 @@ def process_grb_file(file, latlons_cache, columns_cache, timestamps_cache):
                         continue
                     timestamps_cache[outfile].add(timestamp)
 
+                    if outfile not in local_data:
+                        local_data[outfile] = defaultdict(list)
+
                     local_data[outfile]['timestamp'].append(timestamp)
-                    local_data[outfile][columns_cache[sub_grid]].append(val)
+                    for col in columns_cache.values():
+                        if col == column_name:
+                            local_data[outfile][col].append(val)
+                        else:
+                            # Fill missing values for this timestamp with NaN
+                            local_data[outfile][col].append(np.nan)
 
             # Convert the data to a list of dictionaries
             for outfile, columns_dict in local_data.items():
-                local_data[outfile] = [dict(row) for row in
-                    zip(*[[(col, val) for val in val_list] for col, val_list in columns_dict.items()])]
+                max_length = max(len(column) for column in columns_dict.values())
+                for column in columns_dict:
+                    while len(columns_dict[column]) < max_length:
+                        columns_dict[column].append(np.nan)
+
+                local_data[outfile] = [dict(zip(columns_dict, row)) for row in zip(*columns_dict.values())]
 
             # Log processing time and return the data
+            print(f"Processed in: {datetime.now() - start_time}")
             logging.info(f"{timestamp} Processed in: {datetime.now() - start_time}")
             return local_data
 
     # Catch any exceptions and log the errors
     except Exception as e:
+        print(f"Error processing file {file}. Error: {e}")
         logging.error(f"Error processing file {file}. Error: {e}")
         return {}
 
@@ -147,26 +165,6 @@ def write_buffer_to_disk(data_buffer, existing_point_files):
         else:
             df.to_csv(path, mode='w', index=False)
             existing_point_files.add(filename)  # Add the file to the set of existing point files if created
-
-
-# Function to post-process each file and fill any missing spaces
-def post_process_file(filepath):
-    start_time = datetime.now()  # Start the timer for this file
-
-    df = pd.read_csv(filepath)                     # Read the file into a DataFrame
-    df['timestamp'] = pd.to_datetime(
-        df['timestamp'], format='%m/%d/%Y %H:%M')  # Convert to DatetimeIndex
-    df.set_index('timestamp', inplace=True)        # Set the timestamp as the index for the DataFrame
-
-    df = df.resample('H').asfreq()                         # Resample to hourly intervals and insert missing rows
-    df.fillna("NaN", inplace=True)                         # Fill all missing values with "NaN"
-    # df.replace("", "NaN", inplace=True)                    # Replace all empty cells with "NaN"
-    # df.replace(r"^\s*$", "NaN", regex=True, inplace=True)  # Also replace purely whitespace cells with "NaN"
-    df.to_csv(filepath)                                    # Write the processed DataFrame back to the CSV file
-
-    elapsed_time = datetime.now() - start_time                     # Calculate elapsed time
-    logging.info(f"Post-processed {filepath} in: {elapsed_time}")  # Log elapsed time
-
 
 # Turn off automatic garbage collection
 gc.disable()
@@ -186,7 +184,7 @@ if __name__ == '__main__':
 
     # Populate the existing_point_files set from the old directory
     existing_point_files.update([f for f in os.listdir(OUTPUT_DIR) if f.endswith('.csv')])
-    files = glob.iglob(os.path.join(DATA_DIR, "*.grib2"))
+    files = sorted(glob.iglob(os.path.join(DATA_DIR, "*.grib2")))
 
     # Populate timestamps_cache with existing timestamps
     for filename in existing_point_files:
@@ -219,20 +217,3 @@ if __name__ == '__main__':
     main_processing_duration = datetime.now() - main_processing_start_time
     logging.info(f"Main processing duration: {main_processing_duration}.")
     print("Main Processing complete.")  # Print completion message to terminal for the main processing
-
-    # Initialize the timer for post-processing
-    post_processing_start_time = datetime.now()
-
-    print(f"Starting Post-Processing for files in {DATA_DIR}...")  # Print starting message to terminal
-    logging.info(f"Post-processing files in {DATA_DIR}...")  # Log starting message
-
-    # Post-process all the files in the old directory
-    output_files = glob.iglob(os.path.join(OUTPUT_DIR, "*.csv"))
-    for i, outfile in enumerate(output_files, 1):
-        post_process_file(outfile)  # Post-process the file
-        gc.collect()                # Collect garbage
-
-    # Log the duration of post-processing
-    post_processing_duration = datetime.now() - post_processing_start_time
-    logging.info(f"Post-processing duration: {post_processing_duration}.")
-    print("Post-processing complete.")
